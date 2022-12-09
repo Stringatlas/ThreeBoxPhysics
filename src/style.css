@@ -1,0 +1,15 @@
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+.fpsCounter {
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+
+  color: aliceblue;
+
+  z-index: 1;
+  position: fixed;
+}
