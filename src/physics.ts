@@ -1,6 +1,5 @@
 import { Object3D, Mesh, Vector3 as THREEVector3, ArrayCamera} from 'three'
 import * as THREE from 'three'
-import { ThreeObject } from './archive/threeObject';
 import { Vector3, Vector2} from './vector'
 
 export class Collider {
@@ -47,7 +46,6 @@ export class PhysicsObject implements Collider{
 
     if (this.useGravity) {
       force = force.add(Vector3.y.multiply(-this.gravity * this.mass));
-      console.log(force);
     }
 
     // UAM
@@ -57,13 +55,15 @@ export class PhysicsObject implements Collider{
 
     // var velocityChange = this.acceleration.multiply(deltaTime);
     this.velocity = this.velocity.add(this.acceleration);
-    console.log(this.velocity)
+
     var displacement = this.acceleration.multiply(deltaTime / 2).add(initialVelocity.multiply(deltaTime)); // triangle + rectangle
-    var displacement2 = this.velocity.add(initialVelocity).multiply(deltaTime / 2);  // trapezoid
+    // var displacement2 = this.velocity.add(initialVelocity).multiply(deltaTime / 2);  // trapezoid
 
 
     // console.log("velocity", this.velocity);
     // console.log("dispalcement", displacement);
+    var futurePos: Vector3 = displacement.add(Vector3.convertThreeVector(this.position));
+
     this.position = this.position.add(displacement.toThreeVector());
     this.force = force;
     this.acceleration = Vector3.zero;
@@ -106,18 +106,12 @@ export class PhysicsBox extends PhysicsObject {
     [this.zMin, this.zMax] = [objectPos.z - (length / 2), objectPos.z + (length / 2)];
   }
 
-  updateCollision(): void {
-    this.updateBoundingBox();
-    this.checkCollisions(this.collisionObjects);
-  }
-
   updateBoundingBox(): void { 
     const objectPos = Vector3.convertThreeVector(this.mesh.position);
 
     if (objectPos.isEqualTo(this.lastPosition)) return;
 
     // const deltaPos = objectPos.subtract(this.lastPosition);
-
     [this.xMin, this.xMax] = [objectPos.x - (this.width / 2), objectPos.x + (this.width / 2)];
     [this.yMin, this.yMax] = [objectPos.y - (this.height / 2), objectPos.y + (this.height / 2)];
     [this.zMin, this.zMax] = [objectPos.z - (this.length / 2), objectPos.z + (this.length / 2)];
@@ -126,16 +120,29 @@ export class PhysicsBox extends PhysicsObject {
       this.boundingBox.position.set(...this.mesh.position.toArray());
     }
 
-
     this.lastPosition = objectPos;
   }
 
   // collisions should be handled by the system class
-  checkCollisions(objects: Array<PhysicsBox>) {
-    for (let object of objects) {
-      if (PhysicsBox.checkCubeCollision(this, object)) 
-        console.log("COLLISION", this, object);
+  checkCollision(object: PhysicsBox) {
+    if (PhysicsBox.checkBoxCollision(this, object)) {
+      console.log("COLLISION", this, object);
+      PhysicsBox.calcCollision(this, object);
     }
+  }
+
+
+  // @todo -- find the point of incidence if intersects, subtract the time it takes for that displacement to current position
+  // from deltatime, use remaining time to move in the opposite direction - for more accurate velocity and position on slow framerates
+  // should use raycast in current velocity to predict future frame if will intersect
+  static calcCollision(object1: PhysicsBox, object2: PhysicsBox) {
+    var [o1m, o2m, o1v, o2v]: [number, number, Vector3, Vector3] = [object1.mass, object2.mass, object1.velocity, object2.velocity];
+    var object1FinalVelocity: Vector3 = o1v.multiply(o1m - o2m).add(o2v.multiply(2 * o2m)).divide(o1m + o2m);
+    var object2FinalVelocity: Vector3 = o2v.multiply(o2m - o1m).add(o1v.multiply(2 * o1m)).divide(o1m + o2m);
+
+    object1.velocity = object1FinalVelocity;
+    object2.velocity = object2FinalVelocity;
+    console.log("VELOCITIES", object1.velocity, object2.velocity);
   }
 
   showBoundingBox(scene: THREE.Scene) {
@@ -150,7 +157,7 @@ export class PhysicsBox extends PhysicsObject {
     scene.add(this.boundingBox);
   }
 
-  static checkCubeCollision(object1: PhysicsBox, object2: PhysicsBox): boolean {
+  static checkBoxCollision(object1: PhysicsBox, object2: PhysicsBox): boolean {
     if (!this.isAxisIntersect(object1.xMin, object1.xMax, object2.xMin, object2.xMax)) return false;
     if (!this.isAxisIntersect(object1.yMin, object1.yMax, object2.yMin, object2.yMax)) return false;
     if (!this.isAxisIntersect(object1.zMin, object1.zMax, object2.zMin, object2.zMax)) return false;

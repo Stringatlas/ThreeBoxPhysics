@@ -5,8 +5,11 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { PhysicsBox, PhysicsObject } from './physics'
 import { InputManager } from './inputManager'
+import { System } from './system'
 
 let clock = new THREE.Clock();
+
+const system = new System();
 
 const collisionObjects = new Array<PhysicsBox>;
 
@@ -64,9 +67,15 @@ scene.add( axesHelper );
 
 const cubePhysicsObject = new PhysicsBox(5, 5, 5, collisionObjects, cube);
 cubePhysicsObject.useGravity = false;
-const floorPhysicsObject = new PhysicsBox(50, 0.2, 50, collisionObjects, floor);
+cubePhysicsObject.mass = 100;
+const floorPhysicsObject = new PhysicsBox(25, 0.2, 25, collisionObjects, floor);
+floorPhysicsObject.useGravity = false;
+floorPhysicsObject.mass = 100;
 floorPhysicsObject.showBoundingBox(scene);
 cubePhysicsObject.showBoundingBox(scene);
+
+system.addObject(cubePhysicsObject);
+system.addObject(floorPhysicsObject);
 
 function loop() {
     deltaTime = clock.getDelta();
@@ -77,11 +86,11 @@ function loop() {
         
         let upDown = (InputManager.keyPresses.get("r") ? 1 : 0) + (InputManager.keyPresses.get("c") ? -1 : 0);
 
-        cubePhysicsObject.update(deltaTime, new Vector3(horizontal, upDown, -vertical).multiply(10));
-
+        cubePhysicsObject.update(deltaTime, new Vector3(horizontal, upDown, -vertical).multiply(cubePhysicsObject.mass * 5000));
+        floorPhysicsObject.update(deltaTime);
         if (InputManager.keyPresses.get(" ")) cubePhysicsObject.velocity = Vector3.zero;
 
-        cubePhysicsObject.updateCollision();
+        system.update();
     }
 
     fps = 1 / deltaTime;
@@ -101,6 +110,13 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("keyup", (event) => {
     InputManager.updateKeyUp(event);
 });
+
+var [o1m, o2m, o1v, o2v]: [number, number, Vector3, Vector3] = [10, 1, Vector3.zero, Vector3.one.multiply(-2)];
+
+var object1FinalVelocity = o1v.multiply(o1m - o2m).add(o2v.multiply(2 * o2m)).divide(o1m + o2m);
+var object2FinalVelocity = o2v.multiply(o2m - o1m).add(o1v.multiply(2 * o1m)).divide(o1m + o2m);
+
+console.log("FINAL VELOCITIES", object1FinalVelocity, object2FinalVelocity)
 
 loop();
 
