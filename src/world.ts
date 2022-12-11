@@ -19,6 +19,7 @@ const canvas: HTMLCanvasElement | any = document.querySelector('#threeCanvas');
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+var cameraTrackingIndex = 0;
 
 const renderer = new THREE.WebGL1Renderer({
   canvas: canvas
@@ -52,6 +53,7 @@ const floor = new THREE.Mesh(floorGeo, floorMat);
 floor.rotateX(Math.PI / 2);
 floor.translateZ(5);
 
+
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -67,10 +69,10 @@ scene.add( axesHelper );
 
 const cubePhysicsObject = new PhysicsBox(5, 5, 5, collisionObjects, cube);
 cubePhysicsObject.useGravity = false;
-cubePhysicsObject.mass = 100;
+cubePhysicsObject.mass = 10;
 const floorPhysicsObject = new PhysicsBox(25, 0.2, 25, collisionObjects, floor);
 floorPhysicsObject.useGravity = false;
-floorPhysicsObject.mass = 100;
+floorPhysicsObject.mass = 10000;
 floorPhysicsObject.showBoundingBox(scene);
 cubePhysicsObject.showBoundingBox(scene);
 
@@ -86,7 +88,7 @@ function loop() {
         
         let upDown = (InputManager.keyPresses.get("r") ? 1 : 0) + (InputManager.keyPresses.get("c") ? -1 : 0);
 
-        cubePhysicsObject.update(deltaTime, new Vector3(horizontal, upDown, -vertical).multiply(cubePhysicsObject.mass * 5000));
+        cubePhysicsObject.update(deltaTime, new Vector3(horizontal, upDown, -vertical).multiply(cubePhysicsObject.mass * 10));
         floorPhysicsObject.update(deltaTime);
         if (InputManager.keyPresses.get(" ")) cubePhysicsObject.velocity = Vector3.zero;
 

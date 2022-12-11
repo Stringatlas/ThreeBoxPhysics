@@ -1,4 +1,4 @@
-import { Object3D, Mesh, Vector3 as THREEVector3, ArrayCamera} from 'three'
+import { Object3D, Mesh, Vector3 as THREEVector3} from 'three'
 import * as THREE from 'three'
 import { Vector3, Vector2} from './vector'
 
